@@ -21,8 +21,8 @@
 
 ## 快速部署
 
-```bash
 在飞书里对 Claw 说：帮我执行：
+```bash
 cd ~/.openclaw/skills && git clone https://github.com/你的用户名/fin-intel-skills.git && bash ~/.openclaw/skills/fin-intel-skills/setup.sh
 ```
 
