@@ -4,7 +4,7 @@
 #
 # 使用方式：
 #   首次部署：bash setup.sh
-#   更新版本：cd ~/.openclaw/skills/fin-intel-skills && git pull
+#   更新版本：cd ~/.openclaw/skills/FEISHU_NEWS && git pull
 #
 # 特性：
 #   - 所有工作区文件只追加合并，不覆盖原有内容
@@ -206,8 +206,8 @@ echo "  openclaw gateway status   查看网关状态"
 echo "  openclaw channels list    查看飞书连接"
 echo ""
 echo "  更新 Skills（不影响任何配置和数据）："
-echo "  cd ~/.openclaw/skills/fin-intel-skills && git pull"
+echo "  cd ~/.openclaw/skills/FEISHU_NEWS && git pull"
 echo ""
 echo "  重新运行本脚本（安全幂等，可随时重跑）："
-echo "  bash ~/.openclaw/skills/fin-intel-skills/setup.sh"
+echo "  bash ~/.openclaw/skills/FEISHU_NEWS/setup.sh"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
