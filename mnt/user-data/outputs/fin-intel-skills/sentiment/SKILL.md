@@ -14,11 +14,11 @@ description: 对过滤后的新闻按板块做情绪分析，评分 -100 到 +10
 ### 1. 读取最近数据
 用 exec 工具读取：
 ```bash
-cat ~/workspace/filtered-news.json
-cat ~/workspace/watchlist.json
-cat ~/workspace/sentiment-snapshot.json
+cat ~/.openclaw/workspace/filtered-news.json
+cat ~/.openclaw/workspace/watchlist.json
+cat ~/.openclaw/workspace/sentiment-snapshot.json
 ```
-只处理最近15分钟内的新条目（通过 filtered_at 字段判断）。
+处理范围：`filtered_at` 晚于 `sentiment-snapshot.json` 中 `last_analyzed_at` 的所有条目（而非固定15分钟窗口），确保 Cron 延迟或失败时不丢失数据。`sentiment-snapshot.json` 不存在时处理最近2小时的条目。
 
 ### 2. 按板块分组分析
 对每个有新内容的板块，综合分析所有相关新闻：
@@ -40,9 +40,10 @@ cat ~/workspace/sentiment-snapshot.json
 一句话总结: [...]
 ```
 
-### 3. 更新快照文件
+### 3. 更新快照文件（原子写入）
+快照格式：`{"last_analyzed_at": "[时间戳]", "sectors": {"板块名": {...}}}`，`last_analyzed_at` 记录本次分析完成的时间，供下次 Cron 确定处理起点。
 ```bash
-echo '<updated_sentiment_json>' > ~/workspace/sentiment-snapshot.json
+echo '<updated_sentiment_json>' > ~/.openclaw/workspace/sentiment-snapshot.json.tmp && mv ~/.openclaw/workspace/sentiment-snapshot.json.tmp ~/.openclaw/workspace/sentiment-snapshot.json
 ```
 
 ### 4. 推送飞书情绪日报频道
@@ -67,7 +68,7 @@ curl -s -X POST "$FEISHU_SENTIMENT_WEBHOOK" \
 
 ## 用户查询模式（"/sentiment 板块名"）
 
-1. 读取 ~/workspace/sentiment-snapshot.json
+1. 读取 ~/.openclaw/workspace/sentiment-snapshot.json
 2. 找到对应板块的最新快照
 3. 格式化后直接回复用户
 4. 不推送飞书频道

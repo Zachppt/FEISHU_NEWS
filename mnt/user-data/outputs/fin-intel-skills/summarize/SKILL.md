@@ -14,8 +14,8 @@ description: 每2小时对过滤后新闻生成板块快报推送飞书，每天
 
 ### 1. 读取数据
 ```bash
-cat ~/workspace/filtered-news.json
-cat ~/workspace/watchlist.json
+cat ~/.openclaw/workspace/filtered-news.json
+cat ~/.openclaw/workspace/watchlist.json
 ```
 只处理最近2小时内的新条目。
 

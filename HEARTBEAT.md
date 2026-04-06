@@ -17,4 +17,6 @@
 
 ## 静默时间
 
-00:00 - 06:00 跳过 fetch-news，只运行 monitor（检查隔夜重大消息）
+00:00 - 06:00 跳过 fetch-news 和 filter-news，只运行 monitor。
+
+monitor 在静默期检查的是已有 filtered-news.json 中尚未推送的条目（依赖 pushed_ids 去重），而非实时新内容。这可以捕捉到：凌晨前积压但未被监控命中的新闻、以及系统重启后需要补检的条目。不要期望静默期能收到全新新闻，早报由 08:00 Cron 统一汇总隔夜内容。

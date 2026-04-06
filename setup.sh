@@ -69,14 +69,14 @@ HEARTBEAT_FILE="$WORKSPACE/HEARTBEAT.md"
 HEARTBEAT_MARKER="## 金融情报任务"
 
 if [ ! -f "$HEARTBEAT_FILE" ]; then
-  cp "$SKILLS_DIR/workspace/HEARTBEAT.md" "$HEARTBEAT_FILE"
+  cp "$SKILLS_DIR/HEARTBEAT.md" "$HEARTBEAT_FILE"
   echo "  ✓ HEARTBEAT.md 已创建"
 elif grep -q "$HEARTBEAT_MARKER" "$HEARTBEAT_FILE" 2>/dev/null; then
   echo "  - 已包含金融情报任务，跳过"
 else
   echo "" >> "$HEARTBEAT_FILE"
   echo "---" >> "$HEARTBEAT_FILE"
-  cat "$SKILLS_DIR/workspace/HEARTBEAT.md" >> "$HEARTBEAT_FILE"
+  cat "$SKILLS_DIR/HEARTBEAT.md" >> "$HEARTBEAT_FILE"
   echo "  ✓ 已追加金融情报任务到现有 HEARTBEAT.md"
 fi
 
@@ -90,14 +90,14 @@ AGENTS_FILE="$WORKSPACE/AGENTS.md"
 AGENTS_MARKER="金融情报助手"
 
 if [ ! -f "$AGENTS_FILE" ]; then
-  cp "$SKILLS_DIR/workspace/AGENTS.md" "$AGENTS_FILE"
+  cp "$SKILLS_DIR/AGENTS.md" "$AGENTS_FILE"
   echo "  ✓ AGENTS.md 已创建"
 elif grep -q "$AGENTS_MARKER" "$AGENTS_FILE" 2>/dev/null; then
   echo "  - 已包含金融情报配置，跳过"
 else
   echo "" >> "$AGENTS_FILE"
   echo "---" >> "$AGENTS_FILE"
-  cat "$SKILLS_DIR/workspace/AGENTS.md" >> "$AGENTS_FILE"
+  cat "$SKILLS_DIR/AGENTS.md" >> "$AGENTS_FILE"
   echo "  ✓ 已追加金融情报配置到现有 AGENTS.md"
 fi
 
@@ -108,7 +108,7 @@ echo ""
 echo "[4/5] 配置 watchlist.json..."
 
 WATCHLIST_FILE="$WORKSPACE/watchlist.json"
-WATCHLIST_DEFAULT="$SKILLS_DIR/workspace/watchlist.json"
+WATCHLIST_DEFAULT="$SKILLS_DIR/watchlist.json"
 
 if [ ! -f "$WATCHLIST_FILE" ]; then
   cp "$WATCHLIST_DEFAULT" "$WATCHLIST_FILE"
@@ -120,7 +120,7 @@ else
     .[0].keywords = (.[0].keywords + .[1].keywords | unique) |
     .[0]
   ' "$WATCHLIST_FILE" "$WATCHLIST_DEFAULT")
-  echo "$MERGED" > "$WATCHLIST_FILE"
+  echo "$MERGED" > "$WATCHLIST_FILE.tmp" && mv "$WATCHLIST_FILE.tmp" "$WATCHLIST_FILE"
   echo "  ✓ watchlist.json 已合并（原有数据保留）"
 fi
 
@@ -135,7 +135,7 @@ get_webhook() {
   local key="$1"
   local label="$2"
   local existing
-  existing=$(openclaw config get "$key" 2>/dev/null || echo "")
+  existing=$(openclaw config get "$key" 2>/dev/null || true)
   if [ -n "$existing" ] && [ "$existing" != "null" ]; then
     echo "  - $label 已配置，跳过"
   else

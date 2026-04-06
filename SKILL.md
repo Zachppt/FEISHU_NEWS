@@ -14,7 +14,7 @@ description: 从 Bloomberg、Reuters、新浪财经、X 等数据源抓取财经
 ### 1. 读取监控配置
 用 exec 工具执行：
 ```bash
-cat ~/workspace/watchlist.json
+cat ~/.openclaw/workspace/watchlist.json
 ```
 获取关注的板块列表和个股列表，用于后续过滤。
 
@@ -30,7 +30,7 @@ cat ~/workspace/watchlist.json
 ### 3. 去重处理
 用 exec 工具读取去重缓存：
 ```bash
-cat ~/workspace/news-cache.json
+cat ~/.openclaw/workspace/news-cache.json
 ```
 对每条新闻用标题前50字做去重判断，跳过已存在的条目。
 
@@ -38,16 +38,16 @@ cat ~/workspace/news-cache.json
 将新条目追加到原始新闻文件（保留最新300条）：
 ```bash
 # 读取现有数据，合并新条目，截断到300条，写回文件
-cat ~/workspace/raw-news.json
+cat ~/.openclaw/workspace/raw-news.json
 ```
-用 exec 工具写入更新后的 JSON：
+用 exec 工具写入更新后的 JSON（先写临时文件再原子替换）：
 ```bash
-echo '<updated_json>' > ~/workspace/raw-news.json
+echo '<updated_json>' > ~/.openclaw/workspace/raw-news.json.tmp && mv ~/.openclaw/workspace/raw-news.json.tmp ~/.openclaw/workspace/raw-news.json
 ```
 
 更新去重哈希缓存（只保留24小时内的哈希）：
 ```bash
-echo '<updated_cache_json>' > ~/workspace/news-cache.json
+echo '<updated_cache_json>' > ~/.openclaw/workspace/news-cache.json.tmp && mv ~/.openclaw/workspace/news-cache.json.tmp ~/.openclaw/workspace/news-cache.json
 ```
 
 ### 5. 完成报告

@@ -14,9 +14,9 @@ description: 读取原始新闻，先做规则预过滤，再用 AI 判断相关
 ### 1. 读取数据
 用 exec 工具读取：
 ```bash
-cat ~/workspace/raw-news.json
-cat ~/workspace/watchlist.json
-cat ~/workspace/filtered-news.json
+cat ~/.openclaw/workspace/raw-news.json
+cat ~/.openclaw/workspace/watchlist.json
+cat ~/.openclaw/workspace/filtered-news.json
 ```
 
 ### 2. 规则预过滤（不消耗 AI token）
@@ -28,7 +28,7 @@ cat ~/workspace/filtered-news.json
 
 同时丢弃：
 - 标题少于10个字的条目
-- 发布时间超过6小时的条目
+- 发布时间过旧的条目：取所有待处理条目中最新一条的发布时间为基准，丢弃超过基准时间6小时以上的条目（而非以当前系统时间为基准，避免新闻稀少时全部被丢弃）
 
 ### 3. AI 相关性判断
 对通过规则过滤的条目，结合 watchlist.json 中的板块和个股列表，判断每条新闻：
@@ -39,9 +39,9 @@ cat ~/workspace/filtered-news.json
 只保留评分 5 分及以上的条目。
 
 ### 4. 写入过滤结果
-将通过过滤的新条目合并到 filtered-news.json（保留最新500条）：
+将通过过滤的新条目合并到 filtered-news.json（保留最新500条，原子写入）：
 ```bash
-echo '<updated_filtered_json>' > ~/workspace/filtered-news.json
+echo '<updated_filtered_json>' > ~/.openclaw/workspace/filtered-news.json.tmp && mv ~/.openclaw/workspace/filtered-news.json.tmp ~/.openclaw/workspace/filtered-news.json
 ```
 
 每条记录增加字段：
