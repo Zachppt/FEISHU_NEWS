@@ -11,6 +11,7 @@
 #   - 已存在的配置自动跳过，不重复写入
 #   - Cron job 已存在时跳过，不重复添加
 #   - 重复运行安全，任何时候都可以再跑一次
+#   - 脚本只做文件和 Cron 配置，推送渠道由 Agent 引导完成
 # ═══════════════════════════════════════════════════
 
 set -e
@@ -39,7 +40,7 @@ check_tool curl
 # 第一步：初始化工作区目录和数据文件
 # ════════════════════════════════════════
 echo ""
-echo "[1/5] 初始化工作区..."
+echo "[1/4] 初始化工作区..."
 mkdir -p "$WORKSPACE"
 
 init_if_missing() {
@@ -60,10 +61,10 @@ init_if_missing "$WORKSPACE/sentiment-snapshot.json"  "{}"
 init_if_missing "$WORKSPACE/monitor-state.json"       "{}"
 
 # ════════════════════════════════════════
-# 第二步：合并 HEARTBEAT.md
+# 第二步：合并 HEARTBEAT.md / AGENTS.md
 # ════════════════════════════════════════
 echo ""
-echo "[2/5] 配置 HEARTBEAT.md..."
+echo "[2/4] 配置工作区文件..."
 
 HEARTBEAT_FILE="$WORKSPACE/HEARTBEAT.md"
 HEARTBEAT_MARKER="## 金融情报任务"
@@ -79,12 +80,6 @@ else
   cat "$SKILLS_DIR/HEARTBEAT.md" >> "$HEARTBEAT_FILE"
   echo "  ✓ 已追加金融情报任务到现有 HEARTBEAT.md"
 fi
-
-# ════════════════════════════════════════
-# 第三步：合并 AGENTS.md
-# ════════════════════════════════════════
-echo ""
-echo "[3/5] 配置 AGENTS.md..."
 
 AGENTS_FILE="$WORKSPACE/AGENTS.md"
 AGENTS_MARKER="金融情报助手"
@@ -102,10 +97,10 @@ else
 fi
 
 # ════════════════════════════════════════
-# 第四步：合并 watchlist.json
+# 第三步：合并 watchlist.json
 # ════════════════════════════════════════
 echo ""
-echo "[4/5] 配置 watchlist.json..."
+echo "[3/4] 配置 watchlist.json..."
 
 WATCHLIST_FILE="$WORKSPACE/watchlist.json"
 WATCHLIST_DEFAULT="$SKILLS_DIR/watchlist.json"
@@ -125,56 +120,18 @@ else
 fi
 
 # ════════════════════════════════════════
-# 第五步：配置推送渠道 + Cron Jobs
+# 第四步：配置 Heartbeat + Cron Jobs
 # ════════════════════════════════════════
 echo ""
-echo "[5/5] 配置推送渠道和定时任务..."
+echo "[4/4] 配置定时任务..."
 
-# ── 通用：读取已配置则跳过，否则交互输入 ──
-get_config() {
-  local key="$1"
-  local label="$2"
-  local existing
-  existing=$(openclaw config get "$key" 2>/dev/null || true)
-  if [ -n "$existing" ] && [ "$existing" != "null" ]; then
-    echo "  - $label 已配置，跳过"
-  else
-    read -p "  $label: " val
-    if [ -n "$val" ]; then
-      openclaw config set "$key" "$val"
-      echo "  ✓ $label 已配置"
-    else
-      echo "  - $label 跳过（可后续手动配置）"
-    fi
-  fi
-}
-
-# ── 飞书 Webhook ──
-echo ""
-echo "  【飞书推送】（飞书群 → 设置 → 群机器人 → 自定义机器人 获取 URL，不用可直接回车跳过）"
-echo ""
-get_config "skills.entries.monitor.env.FEISHU_ALERT_WEBHOOK"       "飞书即时预警频道 Webhook"
-get_config "skills.entries.sentiment.env.FEISHU_SENTIMENT_WEBHOOK" "飞书情绪日报频道 Webhook"
-get_config "skills.entries.summarize.env.FEISHU_SECTOR_WEBHOOK"    "飞书板块监控频道 Webhook"
-get_config "skills.entries.summarize.env.FEISHU_MORNING_WEBHOOK"   "飞书早报汇总频道 Webhook"
-
-# ── Telegram Bot ──
-echo ""
-echo "  【Telegram 推送】（@BotFather 创建 Bot 获取 Token，不用可直接回车跳过）"
-echo ""
-get_config "skills.entries.feishu_news.env.TELEGRAM_BOT_TOKEN"       "Telegram Bot Token"
-get_config "skills.entries.monitor.env.TELEGRAM_ALERT_CHAT_ID"       "Telegram 即时预警频道 Chat ID"
-get_config "skills.entries.sentiment.env.TELEGRAM_SENTIMENT_CHAT_ID" "Telegram 情绪日报频道 Chat ID"
-get_config "skills.entries.summarize.env.TELEGRAM_SECTOR_CHAT_ID"    "Telegram 板块监控频道 Chat ID"
-get_config "skills.entries.summarize.env.TELEGRAM_MORNING_CHAT_ID"   "Telegram 早报汇总频道 Chat ID"
-
-# ── Heartbeat（幂等配置，重复写入无副作用）──
+# Heartbeat（幂等）
 openclaw config set agents.defaults.heartbeat.every "2m"
 openclaw config set agents.defaults.heartbeat.isolatedSession true
 openclaw config set agents.defaults.heartbeat.target "none"
 echo "  ✓ Heartbeat 已配置（每2分钟）"
 
-# ── Cron Jobs（已存在同名则跳过）──
+# Cron Jobs（已存在同名则跳过）
 add_cron_if_missing() {
   local name="$1"
   shift
@@ -208,20 +165,47 @@ add_cron_if_missing "早报" \
   --announce
 
 # ════════════════════════════════════════
-# 完成
+# 检测推送渠道配置状态，输出标记供 Agent 读取
 # ════════════════════════════════════════
 echo ""
+
+check_config() {
+  local key="$1"
+  local label="$2"
+  local val
+  val=$(openclaw config get "$key" 2>/dev/null || true)
+  if [ -z "$val" ] || [ "$val" = "null" ]; then
+    echo "  MISSING_CONFIG: $key | $label"
+    return 1
+  fi
+  return 0
+}
+
+MISSING=0
+
+check_config "skills.entries.monitor.env.FEISHU_ALERT_WEBHOOK"       "飞书即时预警 Webhook"   || MISSING=1
+check_config "skills.entries.sentiment.env.FEISHU_SENTIMENT_WEBHOOK" "飞书情绪日报 Webhook"   || MISSING=1
+check_config "skills.entries.summarize.env.FEISHU_SECTOR_WEBHOOK"    "飞书板块监控 Webhook"   || MISSING=1
+check_config "skills.entries.summarize.env.FEISHU_MORNING_WEBHOOK"   "飞书早报汇总 Webhook"   || MISSING=1
+check_config "skills.entries.feishu_news.env.TELEGRAM_BOT_TOKEN"     "Telegram Bot Token"     || MISSING=1
+check_config "skills.entries.monitor.env.TELEGRAM_ALERT_CHAT_ID"     "Telegram 即时预警 Chat ID" || MISSING=1
+check_config "skills.entries.sentiment.env.TELEGRAM_SENTIMENT_CHAT_ID" "Telegram 情绪日报 Chat ID" || MISSING=1
+check_config "skills.entries.summarize.env.TELEGRAM_SECTOR_CHAT_ID"  "Telegram 板块监控 Chat ID" || MISSING=1
+check_config "skills.entries.summarize.env.TELEGRAM_MORNING_CHAT_ID" "Telegram 早报汇总 Chat ID" || MISSING=1
+
+echo ""
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-echo "  部署完成！"
-echo ""
-echo "  验证命令："
-echo "  openclaw cron list        查看定时任务"
-echo "  openclaw gateway status   查看网关状态"
-echo "  openclaw channels list    查看飞书连接"
-echo ""
-echo "  更新 Skills（不影响任何配置和数据）："
-echo "  cd ~/.openclaw/skills/FEISHU_NEWS && git pull"
-echo ""
-echo "  重新运行本脚本（安全幂等，可随时重跑）："
-echo "  bash ~/.openclaw/skills/FEISHU_NEWS/setup.sh"
+
+if [ "$MISSING" = "1" ]; then
+  echo "  SETUP_PARTIAL"
+  echo ""
+  echo "  文件和定时任务已就绪，推送渠道待配置。"
+  echo "  请告知 Agent 继续完成配置，或手动执行："
+  echo "  openclaw config set <key> <value>"
+else
+  echo "  SETUP_DONE"
+  echo ""
+  echo "  部署完成，所有推送渠道已配置就绪！"
+fi
+
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
