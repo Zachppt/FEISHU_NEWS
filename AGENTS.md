@@ -179,23 +179,19 @@ openclaw config set skills.entries.summarize.env.TELEGRAM_MORNING_CHAT_ID     "<
 
 ### 第六步：记录 AI 模型与定价
 
-直接问用户以下问题，**不预设选项**，支持任何模型（Claude、DeepSeek、Qwen、GPT 等）：
+分别询问两类任务用的是什么模型：
+1. **情绪快照**（每15分钟，高频）
+2. **板块快报 + 早报**（每2小时/每天，低频）
 
-**分别询问两类任务：**
+**用户说出模型名后，立即用 web 工具查询该模型的官方定价页，无需让用户手动提供价格。**
 
-1. **情绪快照**（每15分钟运行一次，高频）
-   - "你用的是什么模型？"
-   - "这个模型的 Input 定价是多少（每百万 token）？"
-   - "Output 定价是多少（每百万 token）？"
-   - "计费单位是人民币还是美元？"
+查到后以确认口吻展示：
+> "DeepSeek-V3 的定价是：Input ¥1/百万 token，Output ¥2/百万 token（人民币）。是这个吗？"
 
-2. **板块快报 + 早报**（每2小时/每天一次，低频）
-   - 同上四个问题
-
-用户回答后立即写入配置：
+用户确认后写入配置：
 ```bash
-openclaw config set skills.entries.feishu_news.model.sentiment          "<模型名>"
-openclaw config set skills.entries.feishu_news.model.sentiment_in_price "<input价格>"
+openclaw config set skills.entries.feishu_news.model.sentiment           "<模型名>"
+openclaw config set skills.entries.feishu_news.model.sentiment_in_price  "<input价格>"
 openclaw config set skills.entries.feishu_news.model.sentiment_out_price "<output价格>"
 openclaw config set skills.entries.feishu_news.model.sentiment_currency  "<CNY或USD>"
 
@@ -205,7 +201,7 @@ openclaw config set skills.entries.feishu_news.model.summarize_out_price "<outpu
 openclaw config set skills.entries.feishu_news.model.summarize_currency  "<CNY或USD>"
 ```
 
-用户不知道定价时，告知可以在模型提供商的定价页面查询，或暂时跳过（成本估算将显示"未配置定价"）。
+**查不到定价时**（小众模型或定价页无法访问）：告知用户"没找到 [模型名] 的定价，你知道的话直接告诉我，或者跳过（成本估算显示'未配置定价'）"。
 
 ---
 
