@@ -126,7 +126,29 @@ openclaw config set skills.entries.summarize.env.TELEGRAM_MORNING_CHAT_ID     "<
 
 ---
 
-### 第四步：验证推送
+### 第四步：选择 AI 模型
+
+询问用户每类任务希望使用哪个模型，说明各模型的成本与质量差异：
+
+| 模型 | 速度 | 质量 | Input 价格 | Output 价格 | 适合场景 |
+|------|------|------|-----------|------------|---------|
+| claude-haiku-4-5 | 最快 | 良好 | $0.80/MTok | $4.00/MTok | 高频任务（情绪快照每15分钟） |
+| claude-sonnet-4-6 | 中等 | 很好 | $3.00/MTok | $15.00/MTok | 深度报告（板块快报、早报） |
+| claude-opus-4-6 | 较慢 | 最强 | $15.00/MTok | $75.00/MTok | 最高质量分析 |
+
+分别询问以下两类任务用哪个模型：
+1. **情绪快照**（每15分钟运行）：推荐 haiku，成本低
+2. **板块快报 + 早报**（每2小时/每天一次）：推荐 sonnet，分析质量更好
+
+用户确认后写入配置：
+```bash
+openclaw config set skills.entries.feishu_news.model.sentiment "<model-id>"
+openclaw config set skills.entries.feishu_news.model.summarize "<model-id>"
+```
+
+---
+
+### 第五步：验证推送
 
 所有渠道配置完成后，向每个已配置的目标发一条测试消息，请用户确认收到：
 
@@ -148,7 +170,7 @@ curl -s -X POST "https://api.telegram.org/bot<TOKEN>/sendMessage" \
 
 ---
 
-### 第五步：完成，交付使用说明
+### 第六步：完成，交付使用说明
 
 标记 onboarding 完成：
 ```bash

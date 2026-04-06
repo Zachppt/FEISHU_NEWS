@@ -9,20 +9,65 @@ description: 对过滤后的新闻按板块做情绪分析，评分 -100 到 +10
 - Cron job 每15分钟触发（isolated session）
 - 用户发送"/sentiment 板块名"查询特定板块
 
+---
+
 ## 执行步骤（定时触发模式）
 
-### 1. 读取最近数据
-用 exec 工具读取：
+### 1. 读取配置与数据
 ```bash
 cat ~/.openclaw/workspace/filtered-news.json
 cat ~/.openclaw/workspace/watchlist.json
 cat ~/.openclaw/workspace/sentiment-snapshot.json
+openclaw config get skills.entries.feishu_news.model.sentiment
 ```
-处理范围：`filtered_at` 晚于 `sentiment-snapshot.json` 中 `last_analyzed_at` 的所有条目（而非固定15分钟窗口），确保 Cron 延迟或失败时不丢失数据。`sentiment-snapshot.json` 不存在时处理最近2小时的条目。
 
-### 2. 按板块分组分析
+处理范围：`filtered_at` 晚于 `sentiment-snapshot.json` 中 `last_analyzed_at` 的所有条目。
+`sentiment-snapshot.json` 不存在时处理最近2小时的条目。
 
-对每个有新内容的板块，综合分析所有相关新闻，**输出完整详细内容，不限字数**：
+### 2. 按板块生成详细情绪报告
+
+对每个有新内容的板块，输出以下格式（**不限字数，信息完整优先**）：
+
+```
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🧠 [板块名] 情绪快照 · [HH:MM]
+情绪分：[分数] [等级描述]　|　本期新闻：[N]条　|　时段：[开始]–[结束]
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+【总体判断】
+[2-3句：多空力量对比、当前情绪主要驱动因素、近期趋势变化]
+
+【看多因素】
+① [新闻标题或事件简述]
+   详情：[完整事件描述，包括数据、涉及公司、政策内容]
+   影响：[为何构成利多，影响程度判断]
+   来源：[媒体名称] · [时间] · [原文链接]
+
+② [下一条，格式同上]
+（逐条列出所有支撑看多的新闻，无则省略整个【看多因素】块）
+
+【看空因素】
+① [新闻标题或事件简述]
+   详情：[完整事件描述]
+   影响：[为何构成利空，影响程度判断]
+   来源：[媒体名称] · [时间] · [原文链接]
+
+② [下一条，格式同上]
+（逐条列出所有支撑看空的新闻，无则省略整个【看空因素】块）
+
+【重点标的】
+• [股票名]（[代码]）：[利多↑ / 利空↓ / 中性→]　[一句话说明核心逻辑]
+• [股票名]（[代码]）：[同上]
+（列出本期被提及的所有个股）
+
+【热议话题】
+• [话题]：[为何热议，市场核心关注点]
+• [话题]：[同上]
+
+【下期关注】
+[未来15–30分钟需要跟踪的关键变量或事件节点]
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+```
 
 情绪评分标准：
 - +80 ~ +100：极度乐观，重大利好
@@ -31,40 +76,12 @@ cat ~/.openclaw/workspace/sentiment-snapshot.json
 - -80 ~ -40：偏空，利空消息为主
 - -100 ~ -80：极度悲观，重大利空
 
-输出格式：
-```
-🧠 [板块名] 情绪快照 · [时间]
-━━━━━━━━━━━━━━━━━━
-情绪分：[分数] / 100　[对应等级描述]
-本期分析新闻：[N]条
-
-**看多因素**
-- [具体新闻标题或事件]：[为什么构成利多，影响程度]
-- [具体新闻标题或事件]：[分析]
-（逐条列出所有支撑看多的新闻）
-
-**看空因素**
-- [具体新闻标题或事件]：[为什么构成利空，影响程度]
-- [具体新闻标题或事件]：[分析]
-（逐条列出所有支撑看空的新闻）
-
-**热议话题**
-- [话题1]：[简述为何热议，市场关注点]
-- [话题2]：[同上]
-
-**重点标的**
-- [股票名]：[当前情绪偏向，相关新闻简述，短期关注点]
-（列出本期被提及的所有个股）
-
-**综合判断**
-[2-3句完整分析：多空力量对比、近期情绪变化趋势、未来15分钟到1小时的关键变量]
-```
-
 ### 3. 更新快照文件（原子写入）
-快照格式：`{"last_analyzed_at": "[时间戳]", "sectors": {"板块名": {...}}}`，`last_analyzed_at` 记录本次分析完成的时间，供下次 Cron 确定处理起点。
 ```bash
-echo '<updated_sentiment_json>' > ~/.openclaw/workspace/sentiment-snapshot.json.tmp && mv ~/.openclaw/workspace/sentiment-snapshot.json.tmp ~/.openclaw/workspace/sentiment-snapshot.json
+echo '<updated_json>' > ~/.openclaw/workspace/sentiment-snapshot.json.tmp && \
+mv ~/.openclaw/workspace/sentiment-snapshot.json.tmp ~/.openclaw/workspace/sentiment-snapshot.json
 ```
+快照格式：`{"last_analyzed_at": "[ISO时间戳]", "sectors": {"板块名": {...}}}`
 
 ### 4. 推送情绪日报
 飞书和 Telegram 同步推送，未配置的端静默跳过。
@@ -73,42 +90,40 @@ echo '<updated_sentiment_json>' > ~/.openclaw/workspace/sentiment-snapshot.json.
 ```bash
 curl -s -X POST "$FEISHU_SENTIMENT_WEBHOOK" \
   -H "Content-Type: application/json" \
-  -d '{
-    "msg_type": "interactive",
-    "card": {
-      "header": {
-        "title": {"tag": "plain_text", "content": "🧠 情绪快照 · [时间]"},
-        "template": "purple"
-      },
-      "elements": [{
-        "tag": "div",
-        "text": {"tag": "lark_md", "content": "[情绪内容]"}
-      }]
-    }
-  }'
+  -d '{"msg_type":"interactive","card":{"header":{"title":{"tag":"plain_text","content":"🧠 情绪快照 · [时间]"},"template":"purple"},"elements":[{"tag":"div","text":{"tag":"lark_md","content":"[报告内容]"}}]}}'
 ```
 
 **推送 Telegram（TELEGRAM_BOT_TOKEN 和 TELEGRAM_SENTIMENT_CHAT_ID 均已配置时）：**
 ```bash
 curl -s -X POST "https://api.telegram.org/bot$TELEGRAM_BOT_TOKEN/sendMessage" \
   -H "Content-Type: application/json" \
-  -d '{
-    "chat_id": "'"$TELEGRAM_SENTIMENT_CHAT_ID"'",
-    "parse_mode": "Markdown",
-    "text": "🧠 *情绪快照 · [时间]*\n\n[情绪内容]"
-  }'
+  -d '{"chat_id":"'"$TELEGRAM_SENTIMENT_CHAT_ID"'","parse_mode":"Markdown","disable_web_page_preview":true,"text":"[报告内容]"}'
 ```
 
 ### 5. 输出运行成本
 
+读取用户配置的模型：
+```bash
+openclaw config get skills.entries.feishu_news.model.sentiment
 ```
-💰 本次运行成本估算（情绪快照）
-模型：claude-haiku-4-5
-Input tokens：~[N]k  ×  $0.80/MTok  =  $[x]
-Output tokens：~[N]k  ×  $4.00/MTok  =  $[x]
+
+根据模型对照以下定价估算本次成本，输出到对话（不推送飞书/Telegram）：
+
+| 模型 | Input | Output |
+|------|-------|--------|
+| claude-haiku-4-5 | $0.80/MTok | $4.00/MTok |
+| claude-sonnet-4-6 | $3.00/MTok | $15.00/MTok |
+| claude-opus-4-6 | $15.00/MTok | $75.00/MTok |
+
+输出格式：
+```
+💰 本次成本估算 · 情绪快照
+模型：[用户配置的模型名]
+Input：~[N]k tokens × $[x]/MTok = $[x]
+Output：~[N]k tokens × $[x]/MTok = $[x]
 合计：~$[x]
+（token 数按处理新闻字数 + 生成内容字数估算，1 token ≈ 1.5 中文字）
 ```
-Token 数基于处理的新闻字数和生成内容字数估算（1 token ≈ 1.5 中文字）。
 
 ---
 
@@ -116,14 +131,14 @@ Token 数基于处理的新闻字数和生成内容字数估算（1 token ≈ 1.
 
 1. 读取 `~/.openclaw/workspace/sentiment-snapshot.json`
 2. 找到对应板块的最新快照
-3. 以完整详细格式回复用户（同定时触发的输出格式）
-4. 不推送飞书/Telegram 频道
+3. 以完整格式回复用户（同上方报告格式）
+4. 不推送飞书/Telegram
 
 ---
 
 ## 注意事项
-- 如果某板块本期没有新内容，跳过该板块，不生成空快照
+- 某板块本期无新内容则跳过，不生成空报告
+- 原文链接从新闻条目的 `url` 字段读取，无链接时注明"来源：[媒体名称] · [时间]（无原文链接）"
 - FEISHU_SENTIMENT_WEBHOOK、TELEGRAM_BOT_TOKEN、TELEGRAM_SENTIMENT_CHAT_ID 均从环境变量读取
-- 两端推送相互独立，任意端未配置则静默跳过
 - 情绪分数用整数，不要小数
-- **报告详细程度**：默认完整详细版；用户明确说"简版"时才输出精简格式
+- 默认完整详细版；用户明确说"简版"时才输出精简格式
