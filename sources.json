@@ -1,0 +1,45 @@
+{
+  "rss": [
+    {
+      "name": "Bloomberg Markets",
+      "url": "https://feeds.bloomberg.com/markets/news.rss",
+      "enabled": true,
+      "requires_auth": false
+    },
+    {
+      "name": "Reuters 中文",
+      "url": "https://cn.reuters.com/rssFeed/CNTopNews",
+      "enabled": true,
+      "requires_auth": false
+    },
+    {
+      "name": "华尔街见闻",
+      "url": "https://wallstreetcn.com/feed",
+      "enabled": true,
+      "requires_auth": false
+    },
+    {
+      "name": "新浪财经",
+      "url": "https://rss.sina.com.cn/news/fin/stock.xml",
+      "enabled": true,
+      "requires_auth": false
+    },
+    {
+      "name": "财联社",
+      "url": "https://www.cls.cn/rss",
+      "enabled": true,
+      "requires_auth": false
+    }
+  ],
+  "api": [
+    {
+      "name": "BlockBeats",
+      "url": "https://api.theblockbeats.news/v1/open-api/open-flash",
+      "key_ref": "BLOCKBEATS_API_KEY",
+      "apply_url": "https://www.theblockbeats.info/",
+      "enabled": false,
+      "note": "需要申请 API Key"
+    }
+  ],
+  "browser": []
+}
