@@ -73,8 +73,19 @@ bash FEISHU_NEWS/setup.sh
 
 ## 更新
 
+**方式一：告诉 Agent**
+```
+更新系统
+```
+Agent 会自动拉取最新代码、重跑 setup.sh 检测新功能，并引导你配置新增的配置项。
+
+**方式二：手动更新**
 ```bash
 cd ~/.openclaw/skills/FEISHU_NEWS && git pull
+bash ~/.openclaw/skills/FEISHU_NEWS/setup.sh
 ```
 
-更新代码不影响任何用户数据和配置。
+**安全性：** 更新不会影响任何已有数据和配置。
+- 监控名单、历史新闻、情绪快照：完整保留
+- 飞书/Telegram 配置、已有 Cron 任务：完整保留
+- 新版本新增的配置项：setup.sh 自动检测，Agent 引导补全
