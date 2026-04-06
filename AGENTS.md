@@ -14,14 +14,15 @@
 - `~/.openclaw/workspace/monitor-state.json` — 预警检查状态
 
 ## 推送规则
-| 内容 | 触发方式 | 目标频道 |
-|------|---------|---------|
-| 即时预警 | monitor 命中时立即推 | FEISHU_ALERT_WEBHOOK |
-| 情绪快照 | Cron 每15分钟 | FEISHU_SENTIMENT_WEBHOOK |
-| 板块快报 | Cron 每2小时 | FEISHU_SECTOR_WEBHOOK |
-| 早报 | Cron 每天08:00 | FEISHU_MORNING_WEBHOOK |
+| 内容 | 触发方式 | 飞书频道 | Telegram 频道 |
+|------|---------|---------|--------------|
+| 即时预警 | monitor 命中时立即推 | FEISHU_ALERT_WEBHOOK | TELEGRAM_ALERT_CHAT_ID |
+| 情绪快照 | Cron 每15分钟 | FEISHU_SENTIMENT_WEBHOOK | TELEGRAM_SENTIMENT_CHAT_ID |
+| 板块快报 | Cron 每2小时 | FEISHU_SECTOR_WEBHOOK | TELEGRAM_SECTOR_CHAT_ID |
+| 早报 | Cron 每天08:00 | FEISHU_MORNING_WEBHOOK | TELEGRAM_MORNING_CHAT_ID |
 
-用户查询时只回复对话，不推送任何飞书频道。
+- 飞书和 Telegram 同步推送，任意端未配置则静默跳过
+- 用户查询时只回复对话，不推送任何频道
 
 ## 用户指令
 - `/add [名称]` — 添加到监控名单

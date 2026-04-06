@@ -1,6 +1,6 @@
 ---
 name: monitor
-description: 监控 watchlist 中的个股和关键词，命中时立即推送飞书即时预警频道，支持用户管理监控名单
+description: 监控 watchlist 中的个股和关键词，命中时立即推送飞书和 Telegram 即时预警频道，支持用户管理监控名单
 ---
 
 # Monitor Skill
@@ -31,8 +31,12 @@ monitor-state.json 记录上次检查的时间戳，只处理新增条目。
 - 中（orange）：命中 stocks 中的个股
 - 低（blue）：仅命中 sectors 板块关键词
 
-### 4. 推送飞书即时预警频道
-命中时立即推送，不等下一个心跳：
+### 4. 推送即时预警
+命中时立即推送，不等下一个心跳。飞书和 Telegram 同步推送，未配置的端静默跳过。
+
+等级 emoji：🚨 高 / ⚡ 中 / 📌 低
+
+**推送飞书（FEISHU_ALERT_WEBHOOK 已配置时）：**
 ```bash
 curl -s -X POST "$FEISHU_ALERT_WEBHOOK" \
   -H "Content-Type: application/json" \
@@ -51,7 +55,16 @@ curl -s -X POST "$FEISHU_ALERT_WEBHOOK" \
   }'
 ```
 
-等级 emoji：🚨 高 / ⚡ 中 / 📌 低
+**推送 Telegram（TELEGRAM_BOT_TOKEN 和 TELEGRAM_ALERT_CHAT_ID 均已配置时）：**
+```bash
+curl -s -X POST "https://api.telegram.org/bot$TELEGRAM_BOT_TOKEN/sendMessage" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "chat_id": "'"$TELEGRAM_ALERT_CHAT_ID"'",
+    "parse_mode": "Markdown",
+    "text": "[等级emoji] *[命中标的] 相关消息*\n来源：[source]　时间：[time]\n\n[摘要，100字以内]\n\n[查看原文]([url])"
+  }'
+```
 
 ### 5. 更新检查状态
 将本次命中的新闻 URL 列表合并到 pushed_ids（只保留最近24小时内的），防止重启后重复推送：
@@ -93,7 +106,9 @@ echo '<updated_watchlist>' > ~/.openclaw/workspace/watchlist.json.tmp && mv ~/.o
 ```
 
 ## 注意事项
-- FEISHU_ALERT_WEBHOOK 从环境变量读取
+- FEISHU_ALERT_WEBHOOK、TELEGRAM_BOT_TOKEN、TELEGRAM_ALERT_CHAT_ID 均从环境变量读取
+- 两端推送相互独立：飞书推送失败不影响 Telegram，反之亦然
+- 任意端未配置（空值或 null）则静默跳过，不报错
 - 同一条新闻对同一标的只推送一次：推送前检查 url 是否已在 pushed_ids 中，推送后将 url 写入 pushed_ids
 - pushed_ids 只保留最近24小时内的条目，防止无限增长
 - monitor-state.json 不存在时，只处理最近1小时的新闻（避免首次运行刷屏）
