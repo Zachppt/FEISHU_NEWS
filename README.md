@@ -1,45 +1,80 @@
-# 金融情报系统 · OpenClaw Skills
+# FEISHU_NEWS · 金融情报系统
 
-基于 OpenClaw 的量化基金金融情报自动化系统，运行在 AethirClaw VPS 上，通过飞书推送实时金融情报。
+> 基于 **OpenClaw 框架**的 7×24 小时金融新闻监控 Agent。
+> 自动抓取多数据源，按监控名单过滤，情绪分析后推送飞书。
 
-## 系统架构
+---
+
+## 一键安装
+
+将以下链接发送给你的 OpenClaw Agent：
 
 ```
-数据源（Bloomberg / Reuters / 新浪财经 / X）
-         ↓ Heartbeat 每2分钟触发
-    fetch-news → filter-news → monitor → 飞书即时预警
-
-         ↓ Cron 每15分钟
-      sentiment → 飞书情绪日报
-
-         ↓ Cron 每2小时
-      summarize → 飞书板块监控
-
-         ↓ Cron 每天08:00
-      summarize（早报）→ 飞书早报频道
+请帮我安装这个 skill：https://github.com/Zachppt/FEISHU_NEWS
 ```
 
-## 快速部署
+Agent 会自动完成安装并引导你配置飞书 Webhook 和数据源 API Key。
 
-在飞书里对 Claw 说：帮我执行：
+---
+
+## 手动安装
+
 ```bash
-cd ~/.openclaw/skills && git clone https://github.com/Zachppt/FEISHU_NEWS.git && bash ~/.openclaw/skills/FEISHU_NEWS/setup.sh
+cd ~/.openclaw/skills
+git clone https://github.com/Zachppt/FEISHU_NEWS
+bash FEISHU_NEWS/setup.sh
 ```
 
-## 飞书指令
+---
 
-| 指令 | 效果 |
-|------|------|
-| `/add 小米` | 添加个股到监控 |
-| `/remove 小米` | 从监控移除 |
-| `/list` | 查看完整监控名单 |
-| `/sentiment 新能源` | 查询板块最新情绪 |
-| `抓取新闻` | 立即触发一次采集 |
-| `生成汇总` | 立即生成板块快报 |
-| `系统状态` | 查看 Cron 运行情况 |
+## 数据源
+
+| 数据源 | 类型 | 是否需要申请 |
+|---|---|---|
+| Bloomberg Markets | RSS | 免费 |
+| Reuters 中文 | RSS | 免费 |
+| 华尔街见闻 | RSS | 免费 |
+| 新浪财经 | RSS | 免费 |
+| 财联社 | RSS | 免费 |
+| BlockBeats | API | 需申请 → [申请地址](https://www.theblockbeats.info/) |
+
+添加更多数据源：发送 `/添加信息源 <URL>` 给 Agent，自动检测类型并接入。
+
+---
+
+## 推送频道
+
+需要在飞书创建以下群并添加自定义机器人：
+
+| 群用途 | 推送内容 | 频率 |
+|---|---|---|
+| 即时预警群 | 重大新闻实时推送 | 实时 |
+| 情绪日报群 | 板块情绪快照 | 每15分钟 |
+| 板块监控群 | 板块新闻快报 | 每2小时 |
+| 早报群 | 完整早报 | 每天08:00 |
+
+---
+
+## 可用指令
+
+```
+/add 比亚迪          添加到监控名单
+/remove 比亚迪       从监控名单移除
+/list                查看完整监控名单
+/sentiment 新能源    查询板块最新情绪
+/添加信息源 <URL>    添加新数据源
+/数据源列表          查看当前数据源状态
+抓取新闻             立即触发一次采集
+生成汇总             立即生成板块快报
+系统状态             查看 Cron 运行情况
+```
+
+---
 
 ## 更新
 
 ```bash
 cd ~/.openclaw/skills/FEISHU_NEWS && git pull
 ```
+
+更新代码不影响任何用户数据和配置。
