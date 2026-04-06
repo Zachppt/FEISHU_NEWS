@@ -44,9 +44,17 @@
 <!-- 首次安装后自动触发，完成后不再重复 -->
 
 ### 触发条件
-setup.sh 输出中包含 `SETUP_PARTIAL` 时启动。不重复触发：完成后执行
+满足以下**任意一条**时立即启动，无需等用户开口：
+
+1. 刚执行完 setup.sh，输出包含 `SETUP_PARTIAL`
+2. 用户说"安装完了"、"装好了"、"setup 跑完了"等
+3. 用户说"帮我安装"并提供了本仓库链接，安装脚本执行完毕后
+
+不重复触发：完成后执行
 `openclaw config set skills.entries.feishu_news.onboarding_done true`，
 后续检测到 `onboarding_done = true` 则跳过。
+
+**重要**：触发后不要等用户问，直接说"安装完成，现在帮你配置推送渠道"，然后进入第一步。
 
 ---
 
