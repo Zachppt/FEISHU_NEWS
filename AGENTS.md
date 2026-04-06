@@ -126,25 +126,35 @@ openclaw config set skills.entries.summarize.env.TELEGRAM_MORNING_CHAT_ID     "<
 
 ---
 
-### 第四步：选择 AI 模型
+### 第四步：记录 AI 模型与定价
 
-询问用户每类任务希望使用哪个模型，说明各模型的成本与质量差异：
+直接问用户以下问题，**不预设选项**，支持任何模型（Claude、DeepSeek、Qwen、GPT 等）：
 
-| 模型 | 速度 | 质量 | Input 价格 | Output 价格 | 适合场景 |
-|------|------|------|-----------|------------|---------|
-| claude-haiku-4-5 | 最快 | 良好 | $0.80/MTok | $4.00/MTok | 高频任务（情绪快照每15分钟） |
-| claude-sonnet-4-6 | 中等 | 很好 | $3.00/MTok | $15.00/MTok | 深度报告（板块快报、早报） |
-| claude-opus-4-6 | 较慢 | 最强 | $15.00/MTok | $75.00/MTok | 最高质量分析 |
+**分别询问两类任务：**
 
-分别询问以下两类任务用哪个模型：
-1. **情绪快照**（每15分钟运行）：推荐 haiku，成本低
-2. **板块快报 + 早报**（每2小时/每天一次）：推荐 sonnet，分析质量更好
+1. **情绪快照**（每15分钟运行一次，高频）
+   - "你用的是什么模型？"
+   - "这个模型的 Input 定价是多少（每百万 token）？"
+   - "Output 定价是多少（每百万 token）？"
+   - "计费单位是人民币还是美元？"
 
-用户确认后写入配置：
+2. **板块快报 + 早报**（每2小时/每天一次，低频）
+   - 同上四个问题
+
+用户回答后立即写入配置：
 ```bash
-openclaw config set skills.entries.feishu_news.model.sentiment "<model-id>"
-openclaw config set skills.entries.feishu_news.model.summarize "<model-id>"
+openclaw config set skills.entries.feishu_news.model.sentiment          "<模型名>"
+openclaw config set skills.entries.feishu_news.model.sentiment_in_price "<input价格>"
+openclaw config set skills.entries.feishu_news.model.sentiment_out_price "<output价格>"
+openclaw config set skills.entries.feishu_news.model.sentiment_currency  "<CNY或USD>"
+
+openclaw config set skills.entries.feishu_news.model.summarize           "<模型名>"
+openclaw config set skills.entries.feishu_news.model.summarize_in_price  "<input价格>"
+openclaw config set skills.entries.feishu_news.model.summarize_out_price "<output价格>"
+openclaw config set skills.entries.feishu_news.model.summarize_currency  "<CNY或USD>"
 ```
+
+用户不知道定价时，告知可以在模型提供商的定价页面查询，或暂时跳过（成本估算将显示"未配置定价"）。
 
 ---
 

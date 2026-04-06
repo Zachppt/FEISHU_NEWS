@@ -102,27 +102,29 @@ curl -s -X POST "https://api.telegram.org/bot$TELEGRAM_BOT_TOKEN/sendMessage" \
 
 ### 5. 输出运行成本
 
-读取用户配置的模型：
+读取用户配置：
 ```bash
 openclaw config get skills.entries.feishu_news.model.sentiment
+openclaw config get skills.entries.feishu_news.model.sentiment_in_price
+openclaw config get skills.entries.feishu_news.model.sentiment_out_price
+openclaw config get skills.entries.feishu_news.model.sentiment_currency
 ```
 
-根据模型对照以下定价估算本次成本，输出到对话（不推送飞书/Telegram）：
+输出到对话（不推送飞书/Telegram）：
 
-| 模型 | Input | Output |
-|------|-------|--------|
-| claude-haiku-4-5 | $0.80/MTok | $4.00/MTok |
-| claude-sonnet-4-6 | $3.00/MTok | $15.00/MTok |
-| claude-opus-4-6 | $15.00/MTok | $75.00/MTok |
-
-输出格式：
 ```
 💰 本次成本估算 · 情绪快照
-模型：[用户配置的模型名]
-Input：~[N]k tokens × $[x]/MTok = $[x]
-Output：~[N]k tokens × $[x]/MTok = $[x]
-合计：~$[x]
+模型：[model.sentiment 的值]
+Input：~[N]k tokens × [sentiment_in_price]/MTok = [计算结果] [currency]
+Output：~[N]k tokens × [sentiment_out_price]/MTok = [计算结果] [currency]
+合计：~[总计] [currency]
 （token 数按处理新闻字数 + 生成内容字数估算，1 token ≈ 1.5 中文字）
+```
+
+若定价未配置，输出：
+```
+💰 本次成本估算 · 情绪快照
+模型：[model.sentiment 的值]（未配置定价，无法估算成本）
 ```
 
 ---

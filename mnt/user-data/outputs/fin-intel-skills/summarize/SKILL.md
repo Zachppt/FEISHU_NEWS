@@ -84,14 +84,28 @@ curl -s -X POST "https://api.telegram.org/bot$TELEGRAM_BOT_TOKEN/sendMessage" \
 
 ### 4. 输出运行成本（板块快报）
 
-读取模型并按定价估算，输出到对话：
+读取用户配置：
+```bash
+openclaw config get skills.entries.feishu_news.model.summarize
+openclaw config get skills.entries.feishu_news.model.summarize_in_price
+openclaw config get skills.entries.feishu_news.model.summarize_out_price
+openclaw config get skills.entries.feishu_news.model.summarize_currency
+```
 
+输出到对话（不推送飞书/Telegram）：
 ```
 💰 本次成本估算 · 板块快报
-模型：[用户配置的模型名]
-Input：~[N]k tokens × $[x]/MTok = $[x]
-Output：~[N]k tokens × $[x]/MTok = $[x]
-合计：~$[x]
+模型：[model.summarize 的值]
+Input：~[N]k tokens × [summarize_in_price]/MTok = [计算结果] [currency]
+Output：~[N]k tokens × [summarize_out_price]/MTok = [计算结果] [currency]
+合计：~[总计] [currency]
+（token 数按处理新闻字数 + 生成内容字数估算，1 token ≈ 1.5 中文字）
+```
+
+若定价未配置，输出：
+```
+💰 本次成本估算 · 板块快报
+模型：[model.summarize 的值]（未配置定价，无法估算成本）
 ```
 
 ---
@@ -166,25 +180,7 @@ curl -s -X POST "https://api.telegram.org/bot$TELEGRAM_BOT_TOKEN/sendMessage" \
 
 ### 4. 输出运行成本（早报）
 
-```
-💰 本次成本估算 · 早报
-模型：[用户配置的模型名]
-Input：~[N]k tokens × $[x]/MTok = $[x]
-Output：~[N]k tokens × $[x]/MTok = $[x]
-合计：~$[x]
-```
-
----
-
-## 模型定价参考
-
-| 模型 | Input | Output |
-|------|-------|--------|
-| claude-haiku-4-5 | $0.80/MTok | $4.00/MTok |
-| claude-sonnet-4-6 | $3.00/MTok | $15.00/MTok |
-| claude-opus-4-6 | $15.00/MTok | $75.00/MTok |
-
-token 数按处理新闻字数 + 生成内容字数估算，1 token ≈ 1.5 中文字。
+同板块快报，读取 `model.summarize` 相关配置后输出，格式相同，标题改为"早报"。
 
 ---
 
