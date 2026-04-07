@@ -6,18 +6,20 @@
 
 ## 数据文件位置
 - `~/.openclaw/workspace/watchlist.json` — 监控名单（个股、板块、关键词）
-- `~/.openclaw/workspace/raw-news.json` — 原始采集新闻（最新300条）
-- `~/.openclaw/workspace/filtered-news.json` — 过滤后有效新闻（最新500条）
+- `~/.openclaw/workspace/raw-news.json` — 原始采集新闻（最新100条）
+- `~/.openclaw/workspace/filtered-news.json` — 过滤后有效新闻（最新200条）
 - `~/.openclaw/workspace/sentiment-snapshot.json` — 各板块情绪快照
 - `~/.openclaw/workspace/news-cache.json` — 去重哈希缓存（24小时TTL）
 - `~/.openclaw/workspace/monitor-state.json` — 预警检查状态
+- `~/.openclaw/workspace/cost-log.json` — 各任务 token 消耗日志
+- `~/.openclaw/workspace/reports/` — 历史早报存档
 
 ## 推送规则
 | 内容 | 触发方式 | 飞书频道 | Telegram 频道 |
 |------|---------|---------|--------------|
 | 即时预警 | monitor 命中时立即推 | FEISHU_ALERT_WEBHOOK | TELEGRAM_ALERT_CHAT_ID |
-| 情绪快照 | Cron 每15分钟 | FEISHU_SENTIMENT_WEBHOOK | TELEGRAM_SENTIMENT_CHAT_ID |
-| 板块快报 | Cron 每2小时 | FEISHU_SECTOR_WEBHOOK | TELEGRAM_SECTOR_CHAT_ID |
+| 情绪快照 | Cron 每30分钟（有变化才推） | FEISHU_SENTIMENT_WEBHOOK | TELEGRAM_SENTIMENT_CHAT_ID |
+| 板块快报 | Cron 每4小时 | FEISHU_SECTOR_WEBHOOK | TELEGRAM_SECTOR_CHAT_ID |
 | 早报 | Cron 每天08:00 | FEISHU_MORNING_WEBHOOK | TELEGRAM_MORNING_CHAT_ID |
 
 - 飞书和 Telegram 同步推送，任意端未配置则静默跳过
@@ -31,6 +33,7 @@
 - `抓取新闻` — 立即触发一次采集
 - `生成汇总` — 立即生成板块快报
 - `系统状态` — 查看 Cron 运行情况
+- `/成本报告` — 查看今日/本周 token 消耗和费用
 - `更新系统` — 拉取最新版本并检测新功能
 
 ## 更新流程
@@ -100,16 +103,16 @@ setup.sh 是幂等的，重复运行完全安全：
 **已安装的 Skills：**
 | Skill | 作用 | 触发方式 |
 |-------|------|---------|
-| fetch-news | 从多个数据源抓取财经新闻，去重写入缓存 | Heartbeat 每2分钟 |
-| filter-news | 按监控名单过滤原始新闻，筛出有效条目 | Heartbeat 每2分钟（fetch-news 之后） |
-| monitor | 检测命中监控名单的新闻，立即推送预警 | Heartbeat 每2分钟（filter-news 之后） |
-| sentiment | 对各板块做情绪分析，评分推送 | Cron 每15分钟 |
-| summarize | 生成板块快报和每日早报 | Cron 每2小时 + 每天08:00 |
+| fetch-news | 从多个数据源抓取财经新闻，去重写入缓存 | Heartbeat 每5分钟 |
+| filter-news | 按监控名单过滤原始新闻，筛出有效条目 | Heartbeat 每5分钟（有新增才运行） |
+| monitor | 检测命中监控名单的新闻，立即推送预警 | Heartbeat 每5分钟（有命中才运行） |
+| sentiment | 对各板块做情绪分析，评分推送 | Cron 每30分钟（有变化才推送） |
+| summarize | 生成板块快报和每日早报 | Cron 每4小时 + 每天08:00 |
 
 **已配置的定时任务：**
-- Heartbeat：每2分钟，自动运行 fetch → filter → monitor 流水线
-- 情绪快照：每15分钟
-- 板块快报：每2小时
+- Heartbeat：每5分钟，自动运行 fetch → filter → monitor 流水线（有新内容才继续）
+- 情绪快照：每30分钟（有明显变化才推送）
+- 板块快报：每4小时
 - 早报：每天 08:00（Asia/Shanghai）
 
 **数据流：**
@@ -118,7 +121,7 @@ setup.sh 是幂等的，重复运行完全安全：
                                   ↓
                             filtered-news.json
                                   ↓
-                    sentiment（每15分钟）+ summarize（每2小时/每天）
+                    sentiment（每30分钟）+ summarize（每4小时/每天）
 ```
 
 说完后，询问用户是否有问题，没有则继续进入推送渠道配置。
@@ -164,8 +167,8 @@ npm install -g @vercel-labs/agent-browser
 | 群名称（建议） | 推送内容 | 频率 |
 |---|---|---|
 | 金融情报-即时预警 | 命中监控名单的新闻 | 实时 |
-| 金融情报-情绪日报 | 各板块情绪评分 | 每15分钟 |
-| 金融情报-板块快报 | 板块新闻汇总 | 每2小时 |
+| 金融情报-情绪日报 | 各板块情绪评分 | 每30分钟（有变化才推） |
+| 金融情报-板块快报 | 板块新闻汇总 | 每4小时 |
 | 金融情报-早报 | 完整早报 | 每天08:00 |
 
 获取 Webhook 步骤：飞书群 → 设置 → 群机器人 → 添加机器人 → 自定义机器人 → 复制 URL
@@ -195,8 +198,8 @@ openclaw config set skills.entries.feishu_news.env.TELEGRAM_BOT_TOKEN "<token>"
 | 用途 | 推送内容 | 频率 |
 |---|---|---|
 | 金融情报-即时预警 | 命中监控名单的新闻 | 实时 |
-| 金融情报-情绪日报 | 各板块情绪评分 | 每15分钟 |
-| 金融情报-板块快报 | 板块新闻汇总 | 每2小时 |
+| 金融情报-情绪日报 | 各板块情绪评分 | 每30分钟（有变化才推） |
+| 金融情报-板块快报 | 板块新闻汇总 | 每4小时 |
 | 金融情报-早报 | 完整早报 | 每天08:00 |
 
 获取 Chat ID 方法：将 Bot 加入群组/频道后，发一条消息，然后访问
@@ -215,8 +218,8 @@ openclaw config set skills.entries.summarize.env.TELEGRAM_MORNING_CHAT_ID     "<
 ### 第六步：记录 AI 模型与定价
 
 分别询问两类任务用的是什么模型：
-1. **情绪快照**（每15分钟，高频）
-2. **板块快报 + 早报**（每2小时/每天，低频）
+1. **情绪快照**（每30分钟，haiku 模型）
+2. **板块快报 + 早报**（每4小时/每天，sonnet 模型）
 
 **用户说出模型名后，立即用 web 工具查询该模型的官方定价页，无需让用户手动提供价格。**
 

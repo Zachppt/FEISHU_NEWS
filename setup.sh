@@ -59,6 +59,8 @@ init_if_missing "$WORKSPACE/filtered-news.json"       "[]"
 init_if_missing "$WORKSPACE/news-cache.json"          "{}"
 init_if_missing "$WORKSPACE/sentiment-snapshot.json"  "{}"
 init_if_missing "$WORKSPACE/monitor-state.json"       "{}"
+init_if_missing "$WORKSPACE/cost-log.json"            "[]"
+mkdir -p "$WORKSPACE/reports"
 
 # ════════════════════════════════════════
 # 第二步：合并 HEARTBEAT.md / AGENTS.md
@@ -126,10 +128,12 @@ echo ""
 echo "[4/4] 配置定时任务..."
 
 # Heartbeat（幂等）
-openclaw config set agents.defaults.heartbeat.every "2m"
+openclaw config set agents.defaults.heartbeat.every "5m"
 openclaw config set agents.defaults.heartbeat.isolatedSession true
 openclaw config set agents.defaults.heartbeat.target "none"
-echo "  ✓ Heartbeat 已配置（每2分钟）"
+openclaw config set agents.defaults.heartbeat.model "haiku"
+openclaw config set agents.defaults.timeoutSeconds 120
+echo "  ✓ Heartbeat 已配置（每5分钟，haiku 模型）"
 
 # Cron Jobs（已存在同名则跳过）
 add_cron_if_missing() {
@@ -144,15 +148,15 @@ add_cron_if_missing() {
 }
 
 add_cron_if_missing "情绪快照" \
-  --cron "*/15 * * * *" \
+  --cron "*/30 * * * *" \
   --session isolated \
-  --message "运行 sentiment skill，读取最近15分钟 filtered-news.json，对各板块做情绪分析，推送飞书和 Telegram 情绪日报频道" \
+  --message "运行 sentiment skill，读取最近30分钟 filtered-news.json，对各板块做情绪分析，有明显变化时推送飞书和 Telegram 情绪日报频道" \
   --model haiku
 
 add_cron_if_missing "板块快报" \
-  --cron "0 */2 * * *" \
+  --cron "0 */4 * * *" \
   --session isolated \
-  --message "运行 summarize skill，读取最近2小时 filtered-news.json，按板块生成快报，推送飞书和 Telegram 板块监控频道" \
+  --message "运行 summarize skill，读取最近4小时 filtered-news.json，按板块生成快报，推送飞书和 Telegram 板块监控频道" \
   --model sonnet \
   --announce
 
