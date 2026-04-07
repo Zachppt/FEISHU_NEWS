@@ -82,6 +82,5 @@ mv ~/.openclaw/workspace/cost-log.json.tmp ~/.openclaw/workspace/cost-log.json
 ```
 
 ### 输出
-- 扫描条数
-- 命中预警条数
-- 推送结果
+**心跳模式下不输出任何内容到对话**，只推送飞书消息，完成后心跳回复 `HEARTBEAT_OK`。
+手动触发时可输出简洁结果：扫描N条，命中M条，推送状态。

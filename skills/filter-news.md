@@ -23,32 +23,27 @@ bash ~/.openclaw/skills/FEISHU_NEWS/scripts/prefilter.sh
 
 ---
 
-### 第二阶段：LLM 精筛（只看标题，去掉明显无关条目）
+### 第二阶段：精筛（由你自己直接判断，不调用任何外部 API）
 
-读取当前监控名单：
+**不要调用 Ollama、不要调用任何本地端点、不要调用任何外部 API。**
+你就是 LLM，直接阅读候选标题，判断哪些与监控对象相关，输出保留的 id 列表即可。
+
+读取监控名单：
 ```bash
 cat ~/.openclaw/workspace/watchlist.json
 ```
 
-将以下内容发给 LLM（**极短 prompt**）：
+根据 watchlist 中的个股、板块、关键词，检查每条候选标题：
+- 明显相关 → 保留
+- 边缘相关（可能有关）→ 保留
+- 明显无关 → 丢弃
 
----
-监控对象：
-- 个股：{watchlist.stocks 列表}
-- 板块：{watchlist.sectors 列表}
-- 关键词：{watchlist.keywords 列表}
-
-以下是关键词初筛后的候选标题，请去掉**明显**与以上监控对象无关的条目，边缘相关的保留。
-只输出需要保留的 id 列表，JSON 数组格式，不要解释。
-
-候选：
-{候选 JSON 数组}
----
-
-**LLM 输出示例**：
+**直接在内部判断完成，输出一个 JSON 数组**（只含需要保留的 id）：
 ```json
 ["abc123", "def456", "ghi789"]
 ```
+
+不要输出解释，不要输出打分，不要输出过程。
 
 ---
 
@@ -80,6 +75,5 @@ mv ~/.openclaw/workspace/cost-log.json.tmp ~/.openclaw/workspace/cost-log.json
 token 数从本次对话的实际用量中读取（OpenClaw 提供 `$OPENCLAW_LAST_IN_TOKENS` / `$OPENCLAW_LAST_OUT_TOKENS` 环境变量；若不可用则估算：输入按候选标题字符数 ÷ 2，输出按返回 id 列表长度 × 8）。
 
 ### 输出
-- 第一阶段初筛命中数
-- 第二阶段精筛后保留数
-- 最终写入 filtered-news.json 的条数（心跳用此判断是否运行 monitor）
+**心跳模式下不输出任何内容**，只在内部完成写入，将最终保留条数传递给心跳流程。
+手动触发时（用户发送「过滤新闻」）可输出简洁统计：初筛N条 → 精筛保留M条。
