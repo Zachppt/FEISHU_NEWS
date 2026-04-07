@@ -121,19 +121,34 @@ cat ~/.openclaw/workspace/sentiment-snapshot.json
 ━━━━━━━━━━━━━━━━━━━━━━
 ```
 
-**3. 推送飞书**
+**3. 生成 PDF 并发送**
 
-早报末尾加成本行：
+将早报结构化数据（含 top_news 列表、sentiment 快照、us_market、watch_today、tokens 数）序列化为 JSON，通过 stdin 传给 PDF 生成脚本：
+
+```bash
+echo '<report_json>' | python3 ~/.openclaw/skills/FEISHU_NEWS/scripts/generate-morning-pdf.py
 ```
-━━━━━━━━━━━━━━━━━━━━━━
-> ⚙️ ~{tokens} tokens · 今日累计 ~{daily_tokens} tokens
+
+脚本输出 `PDF_PATH:/path/to/file.pdf`（或 `HTML_PATH:...` 若 PDF 库未安装）。
+
+**发送文件到飞书（优先）：**
+```bash
+APP_ID=$(openclaw config get skills.entries.feishu_news.env.FEISHU_APP_ID)
+APP_SECRET=$(openclaw config get skills.entries.feishu_news.env.FEISHU_APP_SECRET)
+CHAT_ID=$(openclaw config get skills.entries.summarize.env.FEISHU_MORNING_CHAT_ID)
+
+python3 ~/.openclaw/skills/FEISHU_NEWS/scripts/send-feishu-file.py \
+  "<pdf_path>" "$CHAT_ID" "$APP_ID" "$APP_SECRET"
 ```
 
-`daily_tokens` 从 cost-log.json 中统计当天所有条目的 in+out 之和。
+APP_ID / APP_SECRET 未配置时，回退到通过 Webhook 发送文字版早报（原有逻辑）：
+```bash
+POST 到 FEISHU_MORNING_WEBHOOK（文字早报）
+```
 
-POST 到 FEISHU_MORNING_WEBHOOK，同步推 Telegram TELEGRAM_MORNING_CHAT_ID（未配置静默跳过）。
+同步推 Telegram TELEGRAM_MORNING_CHAT_ID（未配置静默跳过）。
 
-存档到 `~/.openclaw/workspace/reports/YYYY-MM-DD-morning.md`。
+存档到 `~/.openclaw/workspace/reports/YYYY-MM-DD-morning.pdf`。
 
 **4. 记录成本**
 ```bash

@@ -165,7 +165,41 @@ setup.sh 是幂等的，重复运行完全安全：
 
 ---
 
-### 第二步：询问是否安装 agent-browser
+### 第二步：询问是否启用早报 PDF（飞书自建应用）
+
+询问用户：
+
+> "系统支持每天早报以 **PDF 文件** 形式发送到飞书，包含可点击的新闻链接，便于阅读。
+> 这需要在飞书创建一个自建应用（不影响已有的 Webhook 配置）。**要启用吗？（是 / 否）**"
+
+**用户选"是"时，引导以下步骤：**
+
+1. 打开 [飞书开放平台](https://open.feishu.cn/app) → 创建企业自建应用
+2. 在「权限管理」中开启以下权限：
+   - `im:message:send_as_bot`（发送消息）
+   - `im:file`（上传文件）
+3. 发布应用（或申请发布）
+4. 在「凭证与基础信息」中复制 App ID 和 App Secret
+
+逐一引导用户输入后写入配置：
+```bash
+openclaw config set skills.entries.feishu_news.env.FEISHU_APP_ID     "<app_id>"
+openclaw config set skills.entries.feishu_news.env.FEISHU_APP_SECRET  "<app_secret>"
+```
+
+然后获取早报群的 Chat ID（将 Bot 加入群 → 发一条消息 → 从群设置或 API 读取 Chat ID）：
+```bash
+openclaw config set skills.entries.summarize.env.FEISHU_MORNING_CHAT_ID "<chat_id>"
+```
+
+配置完成后告知：✓ PDF 早报已启用，每天 08:00 将向早报群发送 PDF 文件。
+
+**用户选"否"时：**
+跳过，告知：早报将以文字形式通过 Webhook 发送，后续想启用 PDF 随时运行 `/newssystemupdate` 再配置。
+
+---
+
+### 第三步：询问是否安装 agent-browser
 
 询问用户：
 
