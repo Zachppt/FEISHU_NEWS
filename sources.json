@@ -7,39 +7,68 @@
       "requires_auth": false
     },
     {
-      "name": "Reuters 中文",
-      "url": "https://cn.reuters.com/rssFeed/CNTopNews",
-      "enabled": true,
-      "requires_auth": false
-    },
-    {
-      "name": "华尔街见闻",
-      "url": "https://wallstreetcn.com/feed",
-      "enabled": true,
-      "requires_auth": false
-    },
-    {
-      "name": "新浪财经",
-      "url": "https://rss.sina.com.cn/news/fin/stock.xml",
-      "enabled": true,
-      "requires_auth": false
-    },
-    {
-      "name": "财联社",
-      "url": "https://www.cls.cn/rss",
+      "name": "经济观察网",
+      "url": "https://www.eeo.com.cn/rss.xml",
       "enabled": true,
       "requires_auth": false
     }
   ],
   "api": [
     {
+      "name": "华尔街见闻快讯",
+      "url": "https://api-one-wscn.awtmt.com/apiv1/content/lives?channel=global-channel&cursor=0",
+      "api_type": "wallstreetcn",
+      "enabled": true,
+      "note": "7x24实时快讯，title 为空时用 content_text 前50字作标题"
+    },
+    {
+      "name": "新浪财经",
+      "url": "https://feed.mix.sina.com.cn/api/roll/get?pageid=153&lid=2516&num=30&page=1",
+      "api_type": "sina_finance",
+      "enabled": true,
+      "note": "新浪财经滚动新闻，ctime 为 Unix 时间戳"
+    },
+    {
+      "name": "东方财富沪深公告",
+      "url": "https://np-anotice-stock.eastmoney.com/api/security/ann?page_index=1&page_size=30&ann_type=SHA,SZA&client_source=web",
+      "api_type": "eastmoney_ann",
+      "enabled": true,
+      "note": "沪深上市公司公告，含ST公司重要披露"
+    },
+    {
       "name": "BlockBeats",
       "url": "https://api.theblockbeats.news/v1/open-api/open-flash",
+      "api_type": "blockbeats",
       "key_ref": "BLOCKBEATS_API_KEY",
       "apply_url": "https://www.theblockbeats.info/",
       "enabled": false,
       "note": "需要申请 API Key"
     }
   ],
-  "browser": []
+  "browser": [
+    {
+      "name": "财联社电报",
+      "url": "https://www.cls.cn/telegraph",
+      "enabled": true,
+      "note": "需 Agent Browser 渲染，WAF 拦截纯 HTTP 请求"
+    },
+    {
+      "name": "第一财经",
+      "url": "https://www.yicai.com/news/",
+      "enabled": true,
+      "note": "SPA 站点，需 Agent Browser"
+    },
+    {
+      "name": "Reuters 中文",
+      "url": "https://cn.reuters.com/news/archive/CNTopNews",
+      "enabled": true,
+      "note": "曾 401，用 Agent Browser 绕过"
+    },
+    {
+      "name": "财新网",
+      "url": "https://www.caixin.com/rss/caixinglobal.xml",
+      "enabled": true,
+      "note": "无法直接解析，需 Agent Browser"
+    }
+  ]
 }

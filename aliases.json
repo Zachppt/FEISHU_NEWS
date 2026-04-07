@@ -1,0 +1,14 @@
+{
+  "腾讯": ["腾讯控股", "TENCENT", "Tencent", "0700", "0700.HK"],
+  "阿里": ["阿里巴巴", "Alibaba", "BABA", "9988", "9988.HK", "ALIBABA"],
+  "比亚迪": ["BYD", "002594", "1211", "1211.HK", "比亚迪股份"],
+  "宁德时代": ["CATL", "300750", "宁德时代新能源", "Contemporary Amperex"],
+  "茅台": ["贵州茅台", "Kweichow Moutai", "600519", "Moutai"],
+  "招商银行": ["China Merchants Bank", "CMB", "600036", "3968", "3968.HK", "招行"],
+  "美团": ["Meituan", "3690", "3690.HK", "美团点评", "MEITUAN"],
+  "小米": ["Xiaomi", "1810", "1810.HK", "小米集团", "XIAOMI"],
+  "华为": ["Huawei", "华为技术", "HUAWEI"],
+  "英伟达": ["NVIDIA", "NVDA", "nvidia", "Nvidia"],
+  "特斯拉": ["Tesla", "TSLA", "tesla", "特斯拉汽车"],
+  "苹果": ["Apple", "AAPL", "apple", "苹果公司", "Apple Inc"]
+}

@@ -1,0 +1,8 @@
+.DS_Store
+mnt/**/.DS_Store
+mnt/.DS_Store
+*.tmp
+TESTING.md
+mnt/user-data/test-data/
+__pycache__/
+*.pyc
