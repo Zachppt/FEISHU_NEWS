@@ -75,5 +75,28 @@ POST 到 FEISHU_SENTIMENT_WEBHOOK，同步推 Telegram TELEGRAM_SENTIMENT_CHAT_I
 
 **无变化时（所有板块 delta < ±10）：不推送，静默结束。**
 
-### 5. 用户查询响应
+### 5. 记录成本并推送
+
+将本次调用信息追加到 cost-log.json：
+```bash
+ENTRY=$(jq -n \
+  --arg ts "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+  --arg skill "sentiment" \
+  --argjson in_tokens <实际或估算输入tokens> \
+  --argjson out_tokens <实际或估算输出tokens> \
+  --argjson new_items <本次分析的新增条目数> \
+  --argjson pushed <是否推送，0或1> \
+  '{ts: $ts, skill: $skill, in_tokens: $in_tokens, out_tokens: $out_tokens, new_items: $new_items, pushed: $pushed}')
+
+jq --argjson e "$ENTRY" '. + [$e] | .[-500:]' \
+  ~/.openclaw/workspace/cost-log.json > ~/.openclaw/workspace/cost-log.json.tmp
+mv ~/.openclaw/workspace/cost-log.json.tmp ~/.openclaw/workspace/cost-log.json
+```
+
+推送的飞书消息末尾加一行成本注释（灰色小字，用 `>` 引用格式）：
+```
+> ⚙️ ~{in_tokens+out_tokens} tokens
+```
+
+### 6. 用户查询响应
 收到 `/sentiment 新能源` 时，读取 sentiment-snapshot.json 对应板块，直接回复对话，不推送飞书。

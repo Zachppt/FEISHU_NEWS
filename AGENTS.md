@@ -36,6 +36,42 @@
 - `/成本报告` — 查看今日/本周 token 消耗和费用
 - `更新系统` — 拉取最新版本并检测新功能
 
+## 成本报告
+
+用户发送 `/成本报告` 时：
+
+```bash
+cat ~/.openclaw/workspace/cost-log.json
+```
+
+从 cost-log.json 中统计并展示以下内容（读取模型定价配置计算费用）：
+
+```bash
+IN_PRICE=$(openclaw config get skills.entries.feishu_news.model.sentiment_in_price 2>/dev/null || echo "未配置")
+OUT_PRICE=$(openclaw config get skills.entries.feishu_news.model.sentiment_out_price 2>/dev/null || echo "未配置")
+CURRENCY=$(openclaw config get skills.entries.feishu_news.model.sentiment_currency 2>/dev/null || echo "USD")
+```
+
+**回复格式：**
+```
+📊 成本报告 · YYYY-MM-DD
+
+今日汇总（UTC+8）
+─────────────────────────
+filter    25次  ~18,500 tokens
+monitor    3次  ~   690 tokens
+sentiment  3次  ~  1,950 tokens
+summarize  5次  ~  8,200 tokens
+─────────────────────────
+合计      36次  ~29,340 tokens
+
+💰 今日费用：¥0.18（按 ¥1/百万输入 + ¥2/百万输出估算）
+
+本周累计：~187,000 tokens · ¥1.12
+```
+
+若未配置定价，费用行显示「未配置定价，仅显示 token 数」。
+
 ## 更新流程
 
 用户说"更新系统"、"拉最新版本"或类似意图时，执行以下步骤：

@@ -60,6 +60,25 @@ echo '<updated_json>' > ~/.openclaw/workspace/filtered-news.json.tmp
 mv ~/.openclaw/workspace/filtered-news.json.tmp ~/.openclaw/workspace/filtered-news.json
 ```
 
+### 记录成本
+
+LLM 精筛完成后，将本次调用信息追加到 cost-log.json：
+```bash
+ENTRY=$(jq -n \
+  --arg ts "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+  --arg skill "filter" \
+  --argjson in_tokens <估算输入token数> \
+  --argjson out_tokens <估算输出token数> \
+  --argjson kept <保留条数> \
+  '{ts: $ts, skill: $skill, in_tokens: $in_tokens, out_tokens: $out_tokens, kept: $kept}')
+
+jq --argjson e "$ENTRY" '. + [$e] | .[-500:]' \
+  ~/.openclaw/workspace/cost-log.json > ~/.openclaw/workspace/cost-log.json.tmp
+mv ~/.openclaw/workspace/cost-log.json.tmp ~/.openclaw/workspace/cost-log.json
+```
+
+token 数从本次对话的实际用量中读取（OpenClaw 提供 `$OPENCLAW_LAST_IN_TOKENS` / `$OPENCLAW_LAST_OUT_TOKENS` 环境变量；若不可用则估算：输入按候选标题字符数 ÷ 2，输出按返回 id 列表长度 × 8）。
+
 ### 输出
 - 第一阶段初筛命中数
 - 第二阶段精筛后保留数

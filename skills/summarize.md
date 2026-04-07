@@ -56,7 +56,29 @@ cat ~/.openclaw/workspace/watchlist.json
 情绪方向：变化 > +3 → ↑N，< -3 → ↓N，否则 →0
 
 **4. 推送飞书**
+
+快报末尾加成本行：
+```
+─────────────────────────
+[N]板块 · [M]条新闻
+> ⚙️ ~{in_tokens+out_tokens} tokens
+```
+
 POST 到 FEISHU_SECTOR_WEBHOOK，同步推 Telegram TELEGRAM_SECTOR_CHAT_ID（未配置静默跳过）。
+
+**5. 记录成本**
+```bash
+ENTRY=$(jq -n \
+  --arg ts "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+  --arg skill "summarize_sector" \
+  --argjson in_tokens <实际或估算> \
+  --argjson out_tokens <实际或估算> \
+  '{ts: $ts, skill: $skill, in_tokens: $in_tokens, out_tokens: $out_tokens}')
+
+jq --argjson e "$ENTRY" '. + [$e] | .[-500:]' \
+  ~/.openclaw/workspace/cost-log.json > ~/.openclaw/workspace/cost-log.json.tmp
+mv ~/.openclaw/workspace/cost-log.json.tmp ~/.openclaw/workspace/cost-log.json
+```
 
 ---
 
@@ -100,6 +122,29 @@ cat ~/.openclaw/workspace/sentiment-snapshot.json
 ```
 
 **3. 推送飞书**
+
+早报末尾加成本行：
+```
+━━━━━━━━━━━━━━━━━━━━━━
+> ⚙️ ~{tokens} tokens · 今日累计 ~{daily_tokens} tokens
+```
+
+`daily_tokens` 从 cost-log.json 中统计当天所有条目的 in+out 之和。
+
 POST 到 FEISHU_MORNING_WEBHOOK，同步推 Telegram TELEGRAM_MORNING_CHAT_ID（未配置静默跳过）。
 
 存档到 `~/.openclaw/workspace/reports/YYYY-MM-DD-morning.md`。
+
+**4. 记录成本**
+```bash
+ENTRY=$(jq -n \
+  --arg ts "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+  --arg skill "summarize_morning" \
+  --argjson in_tokens <实际或估算> \
+  --argjson out_tokens <实际或估算> \
+  '{ts: $ts, skill: $skill, in_tokens: $in_tokens, out_tokens: $out_tokens}')
+
+jq --argjson e "$ENTRY" '. + [$e] | .[-500:]' \
+  ~/.openclaw/workspace/cost-log.json > ~/.openclaw/workspace/cost-log.json.tmp
+mv ~/.openclaw/workspace/cost-log.json.tmp ~/.openclaw/workspace/cost-log.json
+```

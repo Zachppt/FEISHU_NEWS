@@ -65,6 +65,22 @@ echo '<updated_json>' > ~/.openclaw/workspace/monitor-state.json.tmp
 mv ~/.openclaw/workspace/monitor-state.json.tmp ~/.openclaw/workspace/monitor-state.json
 ```
 
+### 记录成本（仅在调用 LLM 格式化时记录）
+
+```bash
+ENTRY=$(jq -n \
+  --arg ts "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+  --arg skill "monitor" \
+  --argjson in_tokens <实际或估算输入tokens> \
+  --argjson out_tokens <实际或估算输出tokens> \
+  --argjson alerts <本次推送预警条数> \
+  '{ts: $ts, skill: $skill, in_tokens: $in_tokens, out_tokens: $out_tokens, alerts: $alerts}')
+
+jq --argjson e "$ENTRY" '. + [$e] | .[-500:]' \
+  ~/.openclaw/workspace/cost-log.json > ~/.openclaw/workspace/cost-log.json.tmp
+mv ~/.openclaw/workspace/cost-log.json.tmp ~/.openclaw/workspace/cost-log.json
+```
+
 ### 输出
 - 扫描条数
 - 命中预警条数
